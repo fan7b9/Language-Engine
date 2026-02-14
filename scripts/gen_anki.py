@@ -2,74 +2,69 @@ import genanki
 import re
 import os
 
-# 1. 定義 Anki Model (增加一個 Date 欄位在背面，方便查看)
+# 1. 定義 Model
 MY_MODEL = genanki.Model(
   1607392319,
-  'Language Engine Model v2',
+  'Language Engine Model v3',
   fields=[
     {'name': 'Word'},
     {'name': 'Meaning'},
     {'name': 'Example'},
-    {'name': 'LearnDate'}, # 新增日期欄位
+    {'name': 'LearnDate'},
   ],
   templates=[
     {
       'name': 'Card 1',
-      'qfmt': '<div style="font-size: 30px; font-weight: bold; color: #2E86C1;">{{Word}}</div>',
-      'afmt': '{{FrontSide}}<hr id="answer"><div style="text-align: left;"><b>Meaning:</b> {{Meaning}}<br><br><b>Example:</b> <i>{{Example}}</i><br><br><small style="color:gray;">Learned on: {{LearnDate}}</small></div>',
+      'qfmt': '<div style="font-size: 30px; font-weight: bold; color: #2E86C1; text-align: center;">{{Word}}</div>',
+      'afmt': '{{FrontSide}}<hr id="answer"><div style="text-align: left; font-size: 18px;">'
+              '<b style="color: #E67E22;">Meaning:</b> {{Meaning}}<br><br>'
+              '<b style="color: #27AE60;">Example:</b> <i>{{Example}}</i><br><br>'
+              '<small style="color:gray; font-size: 12px;">🗓 Learned on: {{LearnDate}}</small></div>',
     },
   ])
 
-my_deck = genanki.Deck(2059400110, 'My GitHub Language Deck')
-
-def parse_markdown_with_headers(file_path):
+def parse_markdown_flexible(file_path, deck):
     notes_added = 0
     current_date = "Unknown Date"
-    
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
-            
-            # 識別日期標題 (例如 ### 2026-02-14)
             header_match = re.match(r'^###\s+(.*)', line)
             if header_match:
                 current_date = header_match.group(1).strip()
                 continue
-            
-            # 識別表格行
-            if line.startswith('|') and line.endswith('|'):
+            if line.startswith('|') and line.count('|') >= 3:
                 cells = [c.strip() for c in line.split('|') if c.strip()]
-                
-                # 只要這一行有 3 個以上的欄位，且不是表頭或分隔線，就當作數據
-                if len(cells) >= 3:
+                if len(cells) >= 2:
                     word = cells[0].replace('**', '')
-                    
-                    # 這是關鍵過濾：排除掉所有包含 "Word", "---", "Meaning" 的行
-                    if any(key in word.lower() for key in ['word', '---', 'meaning', 'example']):
+                    if any(x in word.lower() for x in ['word', '---']) or word.replace('-', '') == '':
                         continue
-                    
                     meaning = cells[1]
-                    example = cells[2]
-                    
-                    # 創建卡片，並把 current_date 傳進去
-                    note = genanki.Note(
-                        model=MY_MODEL,
-                        fields=[word, meaning, example, current_date]
-                    )
-                    my_deck.add_note(note)
+                    example = cells[2] if len(cells) >= 3 else "No example provided."
+                    note = genanki.Note(model=MY_MODEL, fields=[word, meaning, example, current_date])
+                    deck.add_note(note)
                     notes_added += 1
     return notes_added
 
-# 掃描 Vocabulary 文件夾
+# 2. 掃描並根據文件名創建子牌組
 vocab_dir = 'Vocabulary'
-total_notes = 0
+all_decks = []
+# 隨機生成一個主牌組 ID，但子牌組需要不同的 ID
 if os.path.exists(vocab_dir):
     for filename in os.listdir(vocab_dir):
         if filename.endswith('.md'):
-            total_notes += parse_markdown_with_headers(os.path.join(vocab_dir, filename))
+            lang_name = filename.replace('.md', '')
+            # 為每個語言生成一個唯一的 ID (簡單地用 hash)
+            deck_id = abs(hash(lang_name)) % (10 ** 10)
+            # 建立子牌組，格式為 "主牌組::語言"
+            sub_deck = genanki.Deck(deck_id, f'My Language Engine::{lang_name}')
+            count = parse_markdown_flexible(os.path.join(vocab_dir, filename), sub_deck)
+            if count > 0:
+                all_decks.append(sub_deck)
 
-if total_notes > 0:
-    genanki.Package(my_deck).write_to_file('language_notes.apkg')
-    print(f"✅ 解析成功！共處理 {total_notes} 個單字。")
+# 3. 匯出所有牌組到一個文件
+if all_decks:
+    genanki.Package(all_decks).write_to_file('language_notes.apkg')
+    print(f"✅ 成功！已生成包含 {len(all_decks)} 種語言的卡片包。")
 else:
-    print("❌ 未發現有效數據。")
+    print("❌ 沒找到有效的單字行。")
