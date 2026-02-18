@@ -2,10 +2,10 @@ import genanki
 import re
 import os
 
-# 1. 定義 Model (包含雙向卡片模板)
+# 1. 定義 Model (針對 iPad 手寫與電腦打字優化)
 MY_MODEL = genanki.Model(
   1607392319,
-  'Language Engine Multi-Way v4',
+  'Language Engine Pro v6',
   fields=[
     {'name': 'Word'},
     {'name': 'Example'},
@@ -14,24 +14,25 @@ MY_MODEL = genanki.Model(
   ],
   templates=[
     {
-      'name': 'Card 1: 理解型 (外->中)',
-      'qfmt': '<div style="font-size: 30px; font-weight: bold; color: #2E86C1; text-align: center;">{{Word}}</div>',
-      'afmt': '{{FrontSide}}<hr id="answer"><div style="text-align: left; font-size: 18px;">'
-              '<b style="color: #27AE60;">Example:</b><br><i>{{Example}}</i><br>'
-              '<b style="color: #7F8C8D;">Meaning:</b> {{SentenceMeaning}}<br><br>'
-              '<small style="color:gray; font-size: 12px;">🗓 Learned on: {{LearnDate}}</small></div>',
-    },
-    {
-      'name': 'Card 2: 表達型 (中->外)',
-      'qfmt': '<div style="font-family: Arial; font-size: 18px; color: #7F8C8D;">How do you say in this context?</div>'
-              '<div style="font-size: 24px; font-weight: bold; color: #2C3E50; margin-top: 10px;">{{SentenceMeaning}}</div>',
-      'afmt': '{{FrontSide}}<hr id="answer">'
-              '<div style="font-size: 30px; font-weight: bold; color: #2E86C1; text-align: center;">{{Word}}</div>'
-              '<div style="text-align: left; font-size: 18px; margin-top: 20px; background: #F4F6F7; padding: 10px;">'
-              '<b style="color: #27AE60;">Full Sentence:</b><br><i>{{Example}}</i><br><br>'
+      'name': '句子生成練習',
+      # 正面：顯示中文解釋 + 關鍵詞提示 + 打字/手寫輸入框
+      'qfmt': '<div style="font-family: Arial; font-size: 16px; color: #7F8C8D;">Translate & Write/Type:</div>'
+              '<div style="font-size: 24px; font-weight: bold; color: #2C3E50; margin-top: 10px;">{{SentenceMeaning}}</div>'
+              '<div style="font-size: 20px; color: #2E86C1; margin-top: 10px; border: 1px dashed #2E86C1; padding: 5px; display: inline-block;">Key Word: {{Word}}</div>'
+              '<br><br>{{type:Example}}', # 這行會生成打字框，並自動比對正誤
+      
+      # 背面：顯示結果比對
+      'afmt': '<div style="font-family: Arial; font-size: 16px; color: #7F8C8D;">Comparison:</div>'
+              '{{type:Example}}' # 背面會顯示你打的字與正確答案的差異
+              '<hr id="answer">'
+              '<div style="text-align: right;">'
               '<small style="color:gray; font-size: 12px;">🗓 Learned on: {{LearnDate}}</small></div>',
     }
-  ])
+  ],
+  css = '.card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }\n'
+        '#typeans { font-family: "Courier New", monospace; font-size: 22px; }' # 優化打字顯示
+)
+
 
 def parse_markdown_flexible(file_path, deck):
     notes_added = 0
