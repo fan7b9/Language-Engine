@@ -12,13 +12,20 @@ MY_MODEL = genanki.Model(
     {'name': 'Example'},
     {'name': 'LearnDate'},
   ],
+  
   templates=[
     {
       'name': 'Card 1',
-      'qfmt': '<div style="font-size: 30px; font-weight: bold; color: #2E86C1; text-align: center;">{{Word}}</div>',
-      'afmt': '{{FrontSide}}<hr id="answer"><div style="text-align: left; font-size: 18px;">'
-              '<b style="color: #E67E22;">Meaning:</b> {{Meaning}}<br><br>'
-              '<b style="color: #27AE60;">Example:</b> <i>{{Example}}</i><br><br>'
+      # 正面：顯示 Meaning (母語提示)
+      'qfmt': '<div style="font-family: Arial; font-size: 20px; color: #7F8C8D;">How do you say:</div>'
+              '<div style="font-size: 30px; font-weight: bold; color: #2C3E50; margin-top: 10px;">{{Meaning}}</div>',
+      
+      # 背面：顯示 Word (目標外語)
+      'afmt': '{{FrontSide}}<hr id="answer">'
+              '<div style="font-size: 35px; font-weight: bold; color: #2E86C1; text-align: center;">{{Word}}</div>'
+              '<br>'
+              '<div style="text-align: left; font-size: 18px; background: #F4F6F7; padding: 15px; border-radius: 10px;">'
+              '<b style="color: #27AE60;">Example:</b><br><i>{{Example}}</i><br><br>'
               '<small style="color:gray; font-size: 12px;">🗓 Learned on: {{LearnDate}}</small></div>',
     },
   ])
