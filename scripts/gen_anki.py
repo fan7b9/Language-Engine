@@ -2,10 +2,10 @@ import genanki
 import re
 import os
 
-# 1. 定義 Model (針對「電腦打字、iPad 隱藏」優化)
+# 1. 定義 Model (使用 JavaScript 徹底解決 iPad 鍵盤問題)
 MY_MODEL = genanki.Model(
   1607392319,
-  'Language Engine Hybrid v7',
+  'Language Engine Hybrid v8',
   fields=[
     {'name': 'Word'},
     {'name': 'Example'},
@@ -14,17 +14,30 @@ MY_MODEL = genanki.Model(
   ],
   templates=[
     {
-      'name': '句子練習 (電腦打字/iPad手寫)',
-      # 正面：包含 type 標籤，但在 iPad 上會被 CSS 隱藏
+      'name': '句子練習 (JS控製鍵盤)',
+      # 正面：增加 ID 方便 JS 抓取
       'qfmt': """
               <div style="font-family: Arial; font-size: 16px; color: #7F8C8D;">Translate & Write/Type:</div>
               <div style="font-size: 24px; font-weight: bold; color: #2C3E50; margin-top: 10px;">{{SentenceMeaning}}</div>
               <div style="font-size: 20px; color: #2E86C1; margin-top: 10px; border: 1px dashed #2E86C1; padding: 5px; display: inline-block;">Key Word: {{Word}}</div>
               <br><br>
-              <div class="type-container">{{type:Example}}</div>
+              <div id="type-box">{{type:Example}}</div>
+
+              <script>
+                // 偵測是否為行動裝置 (iPad/iPhone/Android)
+                var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                
+                if (isMobile) {
+                    var typeBox = document.getElementById('type-box');
+                    if (typeBox) {
+                        // 徹底刪除輸入框，防止系統喚起鍵盤
+                        typeBox.innerHTML = ''; 
+                    }
+                }
+              </script>
               """,
       
-      # 背面：顯示比對結果
+      # 背面
       'afmt': """
               <div style="font-family: Arial; font-size: 16px; color: #7F8C8D;">Comparison:</div>
               {{type:Example}}
@@ -46,24 +59,16 @@ MY_MODEL = genanki.Model(
         font-family: "Courier New", monospace; 
         font-size: 22px; 
     }
-    
-    /* 核心邏輯：如果是行動裝置，隱藏輸入框和提示文字 */
-    .mobile .type-container, 
-    .mobile #typeans, 
-    .mobile [id^="type"] {
-        display: none !important;
-    }
     """
 )
 
+# ... 後續 parse_markdown_flexible 函數與執行邏輯保持不變 ...
 def parse_markdown_flexible(file_path, deck):
     notes_added = 0
     current_date = "No Date"
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
-            line = line.strip()
-            # 容錯：將全角豎線轉為半角
-            line = line.replace('｜', '|')
+            line = line.strip().replace('｜', '|')
             header_match = re.match(r'^###\s+(.*)', line)
             if header_match:
                 current_date = header_match.group(1).strip()
@@ -95,4 +100,3 @@ if os.path.exists(vocab_dir):
 
 if all_decks:
     genanki.Package(all_decks).write_to_file('language_notes.apkg')
-    print("✅ 方案 3 腳本已生成。")
