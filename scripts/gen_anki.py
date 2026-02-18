@@ -2,10 +2,10 @@ import genanki
 import re
 import os
 
-# 1. 定義 Model (使用 JavaScript 徹底解決 iPad 鍵盤問題)
+# 1. 定義 Model (加入防自動對焦腳本)
 MY_MODEL = genanki.Model(
   1607392319,
-  'Language Engine Hybrid v8',
+  'Language Engine Pro v10',
   fields=[
     {'name': 'Word'},
     {'name': 'Example'},
@@ -14,30 +14,36 @@ MY_MODEL = genanki.Model(
   ],
   templates=[
     {
-      'name': '句子練習 (JS控製鍵盤)',
-      # 正面：增加 ID 方便 JS 抓取
+      'name': '手寫/打字雙用模式',
       'qfmt': """
-              <div style="font-family: Arial; font-size: 16px; color: #7F8C8D;">Translate & Write/Type:</div>
+              <div style="font-family: Arial; font-size: 16px; color: #7F8C8D;">Translate & Write:</div>
               <div style="font-size: 24px; font-weight: bold; color: #2C3E50; margin-top: 10px;">{{SentenceMeaning}}</div>
-              <div style="font-size: 20px; color: #2E86C1; margin-top: 10px; border: 1px dashed #2E86C1; padding: 5px; display: inline-block;">Key Word: {{Word}}</div>
+              <div style="font-size: 20px; color: #2E86C1; margin-top: 10px; border: 1px dashed #2E86C1; padding: 5px; display: inline-block;">Key: {{Word}}</div>
               <br><br>
-              <div id="type-box">{{type:Example}}</div>
+              <div id="type-wrapper">{{type:Example}}</div>
 
               <script>
-                // 偵測是否為行動裝置 (iPad/iPhone/Android)
-                var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-                
-                if (isMobile) {
-                    var typeBox = document.getElementById('type-box');
-                    if (typeBox) {
-                        // 徹底刪除輸入框，防止系統喚起鍵盤
-                        typeBox.innerHTML = ''; 
-                    }
+                // 核心邏輯：阻止自動對焦
+                var inputField = document.getElementById('typeans');
+                if (inputField) {
+                    // 1. 移除自動對焦屬性
+                    inputField.blur();
+                    
+                    // 2. 強力攔截 Anki 的自動聚焦行為
+                    inputField.addEventListener('focus', function(e) {
+                        // 如果不是用戶真實點擊（比如系統自動觸發），就強制取消
+                        if (e.relatedTarget === null && !window.userClicked) {
+                            inputField.blur();
+                        }
+                    }, {once: false});
+
+                    // 3. 只有當用戶真的點擊時，才允許聚焦
+                    inputField.addEventListener('mousedown', function() {
+                        window.userClicked = true;
+                    });
                 }
               </script>
               """,
-      
-      # 背面
       'afmt': """
               <div style="font-family: Arial; font-size: 16px; color: #7F8C8D;">Comparison:</div>
               {{type:Example}}
@@ -48,27 +54,24 @@ MY_MODEL = genanki.Model(
     }
   ],
   css = """
-    .card {
-        font-family: arial;
-        font-size: 20px;
-        text-align: center;
-        color: black;
-        background-color: white;
-    }
+    .card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }
     #typeans { 
         font-family: "Courier New", monospace; 
-        font-size: 22px; 
+        font-size: 20px; 
+        border: 1px solid #ccc;
+        padding: 5px;
+        width: 80%;
     }
     """
 )
 
-# ... 後續 parse_markdown_flexible 函數與執行邏輯保持不變 ...
+# ... 後續邏輯保持不變 (記得包含之前的全形符號替換邏輯) ...
 def parse_markdown_flexible(file_path, deck):
     notes_added = 0
     current_date = "No Date"
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
-            line = line.strip().replace('｜', '|')
+            line = line.strip().replace('｜', '|') 
             header_match = re.match(r'^###\s+(.*)', line)
             if header_match:
                 current_date = header_match.group(1).strip()
@@ -77,8 +80,7 @@ def parse_markdown_flexible(file_path, deck):
                 cells = [c.strip() for c in line.split('|') if c.strip()]
                 if len(cells) >= 3:
                     word = cells[0].replace('**', '')
-                    if any(x in word.lower() for x in ['word', '---']):
-                        continue
+                    if any(x in word.lower() for x in ['word', '---']): continue
                     example = cells[1]
                     sentence_meaning = cells[2]
                     note = genanki.Note(model=MY_MODEL, fields=[word, example, sentence_meaning, current_date])
@@ -95,8 +97,6 @@ if os.path.exists(vocab_dir):
             deck_id = abs(hash(lang_name)) % (10 ** 10)
             sub_deck = genanki.Deck(deck_id, f'My Language Engine::{lang_name}')
             count = parse_markdown_flexible(os.path.join(vocab_dir, filename), sub_deck)
-            if count > 0:
-                all_decks.append(sub_deck)
-
+            if count > 0: all_decks.append(sub_deck)
 if all_decks:
     genanki.Package(all_decks).write_to_file('language_notes.apkg')
