@@ -29,8 +29,27 @@ MY_MODEL = genanki.Model(
               '<small style="color:gray; font-size: 12px;">🗓 Learned on: {{LearnDate}}</small></div>',
     }
   ],
-  css = '.card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }\n'
-        '#typeans { font-family: "Courier New", monospace; font-size: 22px; }' # 優化打字顯示
+  css = """
+    .card {
+        font-family: arial;
+        font-size: 20px;
+        text-align: center;
+        color: black;
+        background-color: white;
+    }
+    #typeans { 
+        font-family: "Courier New", monospace; 
+        font-size: 22px; 
+    }
+    
+    /* 針對行動裝置 (iPad/iPhone) 的隱藏邏輯 */
+    .mobile #typeans {
+        display: none; 
+    }
+    .mobile .typeHint {
+        display: none;
+    }
+    """
 )
 
 
