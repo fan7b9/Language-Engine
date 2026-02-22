@@ -1,4 +1,3 @@
-### 2026-02-14
-| Serendipity | 意外發現的美好事物 | We found this tiny café by pure serendipity. |
-| Resilience | 韌性、復原力 | The community showed amazing resilience after the storm. |
-| Burn the midnight oil | 熬夜點燈苦讀/工作 | I have a big exam tomorrow, so I'll be burning the midnight oil tonight. |
+### 2026-02-22
+| Consistency | Consistency is the key to success in language learning. | 持之以恆是語言學習成功的關鍵。 |
+| Take it easy | You’ve been working so hard lately; just take it easy for a while. | 你最近太辛苦了，先放鬆一下吧。 |
