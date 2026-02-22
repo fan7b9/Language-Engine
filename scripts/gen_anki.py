@@ -2,10 +2,10 @@ import genanki
 import re
 import os
 
-# 1. 定義 Model (唯讀守護 + 點擊喚醒模式)
+# 1. 定義 Model (iPad 物理屏蔽版)
 MY_MODEL = genanki.Model(
   1607392319,
-  'Language Engine ReadOnly-Focus v13',
+  'Language Engine Ultimate-Fix v15',
   fields=[
     {'name': 'Word'},
     {'name': 'Example'},
@@ -14,36 +14,38 @@ MY_MODEL = genanki.Model(
   ],
   templates=[
     {
-      'name': '點擊輸入模式',
+      'name': '雙模分流 (CSS 物理屏蔽模式)',
       'qfmt': """
               <div style="font-family: Arial; font-size: 16px; color: #7F8C8D;">Translate & Write:</div>
               <div style="font-size: 24px; font-weight: bold; color: #2C3E50; margin-top: 10px;">{{SentenceMeaning}}</div>
               <div style="font-size: 20px; color: #2E86C1; margin-top: 10px; border: 1px dashed #2E86C1; padding: 5px; display: inline-block;">Key: {{Word}}</div>
               <br><br>
-              <div id="type-wrapper">{{type:Example}}</div>
-
+              
+              <div id="real-input-zone">{{type:Example}}</div>
+              
               <script>
-                var inputField = document.getElementById('typeans');
-                if (inputField) {
-                    // 1. 初始化：設為唯讀，阻止 Anki 自動彈出鍵盤
-                    inputField.readOnly = true;
-                    inputField.placeholder = "Tap to type or write...";
+                var realInput = document.getElementById('typeans');
+                var isMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-                    // 2. 監聽點擊（支援手指觸控與 Pencil）
-                    var activateInput = function() {
-                        if (inputField.readOnly) {
-                            inputField.readOnly = false; // 解除唯讀
-                            inputField.focus();          // 手動觸發鍵盤
-                        }
-                    };
+                if (realInput && isMobile) {
+                    // 1. 在行動端，我們先把真實輸入框隱藏，防止自動聚焦彈鍵盤
+                    realInput.style.display = 'none';
+                    
+                    // 2. 創建一個視覺上的「假框」
+                    var fakeInput = document.createElement('div');
+                    fakeInput.id = 'fake-input';
+                    fakeInput.innerHTML = 'Tap to start writing...';
+                    realInput.parentNode.insertBefore(fakeInput, realInput);
 
-                    inputField.addEventListener('touchstart', activateInput);
-                    inputField.addEventListener('mousedown', activateInput);
-
-                    // 3. 失去焦點時恢復唯讀（可選，建議開啟以保持體驗一致）
-                    inputField.addEventListener('blur', function() {
-                        inputField.readOnly = true;
+                    // 3. 點擊假框後，才顯示真框並喚起鍵盤
+                    fakeInput.addEventListener('touchstart', function() {
+                        fakeInput.style.display = 'none';
+                        realInput.style.display = 'block';
+                        realInput.focus();
                     });
+                } else if (realInput) {
+                    // 電腦端保持正常
+                    realInput.focus();
                 }
               </script>
               """,
@@ -58,19 +60,27 @@ MY_MODEL = genanki.Model(
   ],
   css = """
     .card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }
-    #typeans { 
+    
+    /* 這裡定義真假框的統一外觀 */
+    #typeans, #fake-input { 
         font-family: "Courier New", monospace; 
         font-size: 20px; 
         border: 2px solid #D5DBDB;
         border-radius: 10px;
         padding: 12px;
         width: 85%;
-        transition: border 0.3s;
+        margin: 0 auto;
+        display: block;
+        box-sizing: border-box;
     }
-    #typeans:focus {
-        border-color: #2E86C1;
-        outline: none;
+    
+    #fake-input {
+        color: #BDC3C7;
+        border-style: dashed;
+        cursor: pointer;
     }
+
+    #typeans:focus { border-color: #2E86C1; outline: none; }
     """
 )
 
