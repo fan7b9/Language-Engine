@@ -2,10 +2,10 @@ import genanki
 import re
 import os
 
-# 1. 定義 Model (加入防自動對焦腳本)
+# 1. 定義 Model (唯讀守護 + 點擊喚醒模式)
 MY_MODEL = genanki.Model(
   1607392319,
-  'Language Engine Pro v10',
+  'Language Engine ReadOnly-Focus v13',
   fields=[
     {'name': 'Word'},
     {'name': 'Example'},
@@ -14,7 +14,7 @@ MY_MODEL = genanki.Model(
   ],
   templates=[
     {
-      'name': '手寫/打字雙用模式',
+      'name': '點擊輸入模式',
       'qfmt': """
               <div style="font-family: Arial; font-size: 16px; color: #7F8C8D;">Translate & Write:</div>
               <div style="font-size: 24px; font-weight: bold; color: #2C3E50; margin-top: 10px;">{{SentenceMeaning}}</div>
@@ -23,23 +23,26 @@ MY_MODEL = genanki.Model(
               <div id="type-wrapper">{{type:Example}}</div>
 
               <script>
-                // 核心邏輯：阻止自動對焦
                 var inputField = document.getElementById('typeans');
                 if (inputField) {
-                    // 1. 移除自動對焦屬性
-                    inputField.blur();
-                    
-                    // 2. 強力攔截 Anki 的自動聚焦行為
-                    inputField.addEventListener('focus', function(e) {
-                        // 如果不是用戶真實點擊（比如系統自動觸發），就強制取消
-                        if (e.relatedTarget === null && !window.userClicked) {
-                            inputField.blur();
-                        }
-                    }, {once: false});
+                    // 1. 初始化：設為唯讀，阻止 Anki 自動彈出鍵盤
+                    inputField.readOnly = true;
+                    inputField.placeholder = "Tap to type or write...";
 
-                    // 3. 只有當用戶真的點擊時，才允許聚焦
-                    inputField.addEventListener('mousedown', function() {
-                        window.userClicked = true;
+                    // 2. 監聽點擊（支援手指觸控與 Pencil）
+                    var activateInput = function() {
+                        if (inputField.readOnly) {
+                            inputField.readOnly = false; // 解除唯讀
+                            inputField.focus();          // 手動觸發鍵盤
+                        }
+                    };
+
+                    inputField.addEventListener('touchstart', activateInput);
+                    inputField.addEventListener('mousedown', activateInput);
+
+                    // 3. 失去焦點時恢復唯讀（可選，建議開啟以保持體驗一致）
+                    inputField.addEventListener('blur', function() {
+                        inputField.readOnly = true;
                     });
                 }
               </script>
@@ -58,9 +61,15 @@ MY_MODEL = genanki.Model(
     #typeans { 
         font-family: "Courier New", monospace; 
         font-size: 20px; 
-        border: 1px solid #ccc;
-        padding: 5px;
-        width: 80%;
+        border: 2px solid #D5DBDB;
+        border-radius: 10px;
+        padding: 12px;
+        width: 85%;
+        transition: border 0.3s;
+    }
+    #typeans:focus {
+        border-color: #2E86C1;
+        outline: none;
     }
     """
 )
