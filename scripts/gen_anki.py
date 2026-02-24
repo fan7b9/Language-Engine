@@ -1,96 +1,72 @@
 import genanki
 import re
 import os
+from gtts import gTTS
 
-# 1. 定義 Model (iPad 物理屏蔽版)
+# 1. 定義 Model (加入 Audio 欄位)
 MY_MODEL = genanki.Model(
   1607392319,
-  'Language Engine Ultimate-Fix v15',
+  'Language Engine Audio v16',
   fields=[
     {'name': 'Word'},
     {'name': 'Example'},
     {'name': 'SentenceMeaning'},
     {'name': 'LearnDate'},
+    {'name': 'Audio'}, # 新增音頻欄位
   ],
   templates=[
     {
-      'name': '雙模分流 (CSS 物理屏蔽模式)',
+      'name': '語音強化模式',
       'qfmt': """
-              <div style="font-family: Arial; font-size: 16px; color: #7F8C8D;">Translate & Write:</div>
-              <div style="font-size: 24px; font-weight: bold; color: #2C3E50; margin-top: 10px;">{{SentenceMeaning}}</div>
-              <div style="font-size: 20px; color: #2E86C1; margin-top: 10px; border: 1px dashed #2E86C1; padding: 5px; display: inline-block;">Key: {{Word}}</div>
-              <br><br>
-              
-              <div id="real-input-zone">{{type:Example}}</div>
-              
-              <script>
-                var realInput = document.getElementById('typeans');
-                var isMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-                if (realInput && isMobile) {
-                    // 1. 在行動端，我們先把真實輸入框隱藏，防止自動聚焦彈鍵盤
-                    realInput.style.display = 'none';
-                    
-                    // 2. 創建一個視覺上的「假框」
-                    var fakeInput = document.createElement('div');
-                    fakeInput.id = 'fake-input';
-                    fakeInput.innerHTML = 'Tap to start writing...';
-                    realInput.parentNode.insertBefore(fakeInput, realInput);
-
-                    // 3. 點擊假框後，才顯示真框並喚起鍵盤
-                    fakeInput.addEventListener('touchstart', function() {
-                        fakeInput.style.display = 'none';
-                        realInput.style.display = 'block';
-                        realInput.focus();
-                    });
-                } else if (realInput) {
-                    // 電腦端保持正常
-                    realInput.focus();
-                }
-              </script>
+              <div style="font-size: 24px; font-weight: bold; color: #2C3E50;">{{SentenceMeaning}}</div>
+              <div style="font-size: 18px; color: #2E86C1; margin-top: 10px;">Key Word: {{Word}}</div>
+              <div style="margin-top: 20px;">{{Audio}}</div> <br><br>
+              {{type:Example}}
               """,
       'afmt': """
-              <div style="font-family: Arial; font-size: 16px; color: #7F8C8D;">Comparison:</div>
               {{type:Example}}
               <hr id="answer">
-              <div style="text-align: right;">
-              <small style="color:gray; font-size: 12px;">🗓 Learned on: {{LearnDate}}</small></div>
+              <div style="font-size: 24px; font-weight: bold; color: #27AE60;">{{Example}}</div>
+              <div style="text-align: right; margin-top: 20px;">
+                <small style="color:gray;">🗓 {{LearnDate}}</small>
+              </div>
               """,
     }
   ],
   css = """
     .card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }
-    
-    /* 這裡定義真假框的統一外觀 */
-    #typeans, #fake-input { 
-        font-family: "Courier New", monospace; 
-        font-size: 20px; 
-        border: 2px solid #D5DBDB;
-        border-radius: 10px;
-        padding: 12px;
-        width: 85%;
-        margin: 0 auto;
-        display: block;
-        box-sizing: border-box;
-    }
-    
-    #fake-input {
-        color: #BDC3C7;
-        border-style: dashed;
-        cursor: pointer;
-    }
-
-    #typeans:focus { border-color: #2E86C1; outline: none; }
+    #typeans { font-family: "Courier New", monospace; font-size: 22px; padding: 10px; width: 80%; }
     """
 )
 
-# ... 後續邏輯保持不變 (記得包含之前的全形符號替換邏輯) ...
-def parse_markdown_flexible(file_path, deck):
+def generate_audio(text, lang_name):
+    """根據語言生成音頻檔案"""
+    lang_map = {'Japanese': 'ja', 'English': 'en', 'French': 'fr'}
+    lang_code = lang_map.get(lang_name, 'en')
+    
+    # 建立臨時目錄存放音頻
+    if not os.path.exists('media'):
+        os.makedirs('media')
+    
+    # 清理檔案名中的特殊字符
+    clean_name = re.sub(r'[\\/*?:"<>|]', "", text)[:20]
+    filename = f"{clean_name}.mp3"
+    filepath = os.path.join('media', filename)
+    
+    if not os.path.exists(filepath):
+        try:
+            tts = gTTS(text=text, lang=lang_code)
+            tts.save(filepath)
+        except:
+            return None
+    return filename
+
+def parse_markdown(file_path, deck, lang_name, package_media):
     notes_added = 0
     current_date = "No Date"
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
-            line = line.strip().replace('｜', '|') 
+            line = line.strip().replace('｜', '|')
             header_match = re.match(r'^###\s+(.*)', line)
             if header_match:
                 current_date = header_match.group(1).strip()
@@ -100,22 +76,38 @@ def parse_markdown_flexible(file_path, deck):
                 if len(cells) >= 3:
                     word = cells[0].replace('**', '')
                     if any(x in word.lower() for x in ['word', '---']): continue
-                    example = cells[1]
-                    sentence_meaning = cells[2]
-                    note = genanki.Note(model=MY_MODEL, fields=[word, example, sentence_meaning, current_date])
+                    
+                    example_sentence = cells[1]
+                    # 生成音頻
+                    audio_file = generate_audio(example_sentence, lang_name)
+                    
+                    audio_tag = ""
+                    if audio_file:
+                        audio_tag = f"[sound:{audio_file}]"
+                        package_media.append(os.path.join('media', audio_file))
+                    
+                    note = genanki.Note(
+                        model=MY_MODEL, 
+                        fields=[word, example_sentence, cells[2], current_date, audio_tag]
+                    )
                     deck.add_note(note)
                     notes_added += 1
     return notes_added
 
 vocab_dir = 'Vocabulary'
 all_decks = []
+package_media = []
+
 if os.path.exists(vocab_dir):
     for filename in sorted(os.listdir(vocab_dir)):
         if filename.endswith('.md'):
             lang_name = filename.replace('.md', '')
             deck_id = abs(hash(lang_name)) % (10 ** 10)
             sub_deck = genanki.Deck(deck_id, f'My Language Engine::{lang_name}')
-            count = parse_markdown_flexible(os.path.join(vocab_dir, filename), sub_deck)
-            if count > 0: all_decks.append(sub_deck)
+            if parse_markdown(os.path.join(vocab_dir, filename), sub_deck, lang_name, package_media) > 0:
+                all_decks.append(sub_deck)
+
 if all_decks:
-    genanki.Package(all_decks).write_to_file('language_notes.apkg')
+    package = genanki.Package(all_decks)
+    package.media_files = package_media
+    package.write_to_file('language_notes.apkg')

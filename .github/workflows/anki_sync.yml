@@ -18,7 +18,7 @@ jobs:
         python-version: '3.9'
 
     - name: Install dependencies
-      run: pip install genanki
+      run: pip install genanki gtts
 
     - name: Run script
       run: python scripts/gen_anki.py
