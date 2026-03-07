@@ -11,5 +11,3 @@
 | énormément | Bref, j'aime énormément les langues !| 總之，我真的很喜歡語言 |
 | maternelle | Ma langue maternelle, c'est le chinois.| 我的母語是中文 |
 | mandarin | Ma langue maternelle, c'est le mandarin.| 我的母語是中文（普通話）|
-### 2026-03-08
-| l'été | J’adore l’été car il fait beau. | 我愛夏天，因為天氣很好。 |
