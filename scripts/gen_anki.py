@@ -1,6 +1,7 @@
 import genanki
 import re
 import os
+import hashlib
 from gtts import gTTS
 
 # 1. 定義 Model (加入 Audio 欄位)
@@ -37,6 +38,17 @@ MY_MODEL = genanki.Model(
     .card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }
     #typeans { font-family: "Courier New", monospace; font-size: 22px; padding: 10px; width: 80%; }
     """
+)
+
+def str_to_id(s):
+    # 將單字轉成一個固定的 10 位整數作為 ID
+    return int(hashlib.sha256(s.encode('utf-8')).hexdigest(), 16) % (10**10)
+
+# 在 parse_markdown 裡建立 Note 時：
+note = genanki.Note(
+    model=MY_MODEL,
+    fields=[word, example, meaning, date, audio_tag],
+    guid=str_to_id(word) # 關鍵：這會固定這張卡片的 ID
 )
 
 def generate_audio(text, lang_name):
