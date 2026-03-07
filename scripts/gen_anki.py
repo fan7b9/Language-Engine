@@ -4,20 +4,20 @@ import os
 import hashlib
 from gtts import gTTS
 
-# 1. 定義 Model (加入 Audio 欄位)
+# 1. 定義 Model
 MY_MODEL = genanki.Model(
   1607392319,
-  'Language Engine Audio v16',
+  'Language Engine Pro v17',
   fields=[
     {'name': 'Word'},
     {'name': 'Example'},
     {'name': 'SentenceMeaning'},
     {'name': 'LearnDate'},
-    {'name': 'Audio'}, # 新增音頻欄位
+    {'name': 'Audio'},
   ],
   templates=[
     {
-      'name': '語音強化模式',
+      'name': '智能學習模式',
       'qfmt': """
               <div style="font-size: 24px; font-weight: bold; color: #2C3E50;">{{SentenceMeaning}}</div>
               <div style="font-size: 18px; color: #2E86C1; margin-top: 10px;">Key Word: {{Word}}</div>
@@ -41,28 +41,20 @@ MY_MODEL = genanki.Model(
 )
 
 def str_to_id(s):
-    # 將單字轉成一個固定的 10 位整數作為 ID
+    """根據字串生成固定的 ID，確保 Anki 進度不丟失"""
     return int(hashlib.sha256(s.encode('utf-8')).hexdigest(), 16) % (10**10)
-
-# 在 parse_markdown 裡建立 Note 時：
-note = genanki.Note(
-    model=MY_MODEL,
-    fields=[word, example, meaning, date, audio_tag],
-    guid=str_to_id(word) # 關鍵：這會固定這張卡片的 ID
-)
 
 def generate_audio(text, lang_name):
     """根據語言生成音頻檔案"""
     lang_map = {'Japanese': 'ja', 'English': 'en', 'French': 'fr'}
     lang_code = lang_map.get(lang_name, 'en')
     
-    # 建立臨時目錄存放音頻
     if not os.path.exists('media'):
         os.makedirs('media')
     
-    # 清理檔案名中的特殊字符
-    clean_name = re.sub(r'[\\/*?:"<>|]', "", text)[:20]
-    filename = f"{clean_name}.mp3"
+    # 建立一個唯一的檔名
+    safe_text = re.sub(r'[\\/*?:"<>|]', "", text)[:30]
+    filename = f"{lang_code}_{hashlib.md5(text.encode()).hexdigest()[:8]}.mp3"
     filepath = os.path.join('media', filename)
     
     if not os.path.exists(filepath):
@@ -79,11 +71,14 @@ def parse_markdown(file_path, deck, lang_name, package_media):
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip().replace('｜', '|')
+            # 修正法語/英語引號導致的匹配錯誤
             line = line.replace('’', "'").replace('‘', "'")
+            
             header_match = re.match(r'^###\s+(.*)', line)
             if header_match:
                 current_date = header_match.group(1).strip()
                 continue
+            
             if line.startswith('|') and line.count('|') >= 3:
                 cells = [c.strip() for c in line.split('|') if c.strip()]
                 if len(cells) >= 3:
@@ -91,22 +86,26 @@ def parse_markdown(file_path, deck, lang_name, package_media):
                     if any(x in word.lower() for x in ['word', '---']): continue
                     
                     example_sentence = cells[1]
-                    # 生成音頻
-                    audio_file = generate_audio(example_sentence, lang_name)
+                    meaning = cells[2]
                     
+                    # 處理音頻
+                    audio_file = generate_audio(example_sentence, lang_name)
                     audio_tag = ""
                     if audio_file:
                         audio_tag = f"[sound:{audio_file}]"
                         package_media.append(os.path.join('media', audio_file))
                     
+                    # 建立筆記並固定 GUID
                     note = genanki.Note(
-                        model=MY_MODEL, 
-                        fields=[word, example_sentence, cells[2], current_date, audio_tag]
+                        model=MY_MODEL,
+                        fields=[word, example_sentence, meaning, current_date, audio_tag],
+                        guid=str_to_id(f"{lang_name}_{word}") # 固定 ID 的核心
                     )
                     deck.add_note(note)
                     notes_added += 1
     return notes_added
 
+# 主程序邏輯
 vocab_dir = 'Vocabulary'
 all_decks = []
 package_media = []
@@ -124,3 +123,4 @@ if all_decks:
     package = genanki.Package(all_decks)
     package.media_files = package_media
     package.write_to_file('language_notes.apkg')
+    print("🚀 成功生成帶有固定 ID 與音頻的牌組！")
