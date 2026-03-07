@@ -12,5 +12,5 @@
 | autant |J’aime tout autant l’espagnol. | 我也喜歡西班牙語 |
 | les paroles |J'écoute de la musique, j'essaie de comprendre les paroles, de lire ou même de parler avec quelqu'un. | 我聽音樂，我試著理解歌詞，閱讀甚至和某人交談。|
 | énormément | Bref, j'aime énormément les langues !| 總之，我真的很喜歡語言 |
-| maternelle | Ma langue maternelle, c’est le chinois.| 我的母語是中文 |
+| maternelle | Ma langue maternelle, c'est le chinois.| 我的母語是中文 |
 | mandarin | Ma langue maternelle, c'est le mandarin.| 我的母語是中文（普通話）|
