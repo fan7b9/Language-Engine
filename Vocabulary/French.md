@@ -1,5 +1,5 @@
 ### 2026-03-06
-| écrire | Je vais l’écrire : mon nom est Louis. | 我可以寫 ：我的名字是路易 ｜
+| écrire | Je vais l'écrire : mon nom est Louis. | 我可以寫 ：我的名字是路易 ｜
 | passionné | Je suis passionné par les langues. | 我對語言充滿熱情 |
 ### 2026-03-07
 | écouter |J'adore écouter des choses en allemand | 我喜歡聽德語 |
