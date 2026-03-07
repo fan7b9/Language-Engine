@@ -67,6 +67,7 @@ def parse_markdown(file_path, deck, lang_name, package_media):
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip().replace('｜', '|')
+            line = line.strip().replace('｜', '|')
             header_match = re.match(r'^###\s+(.*)', line)
             if header_match:
                 current_date = header_match.group(1).strip()
