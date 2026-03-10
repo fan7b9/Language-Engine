@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anki 批量錄入助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .cached-card:hover .delete-btn {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 p-4 md:p-8 font-sans">
+    <div class="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <div class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <span class="bg-blue-100 text-blue-600 p-2 rounded-lg mr-2">✍️</span> 單條錄入
+                </h2>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">語言</label>
+                            <select id="lang"
+                                class="mt-1 block w-full rounded-lg border-gray-200 bg-gray-50 p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none border">
+                                <option value="English">English</option>
+                                <option value="Japanese">Japanese</option>
+                                <option value="French">French</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">日期</label>
+                            <input type="date" id="date"
+                                class="mt-1 block w-full rounded-lg border-gray-200 bg-gray-50 p-2 text-sm border">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">句子 (Sentence)</label>
+                        <textarea id="sentence" rows="2"
+                            class="mt-1 block w-full rounded-lg border-gray-200 p-2 text-sm border focus:border-blue-500 outline-none"
+                            placeholder="J'adore l'été..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">中文翻譯</label>
+                        <input type="text" id="meaning"
+                            class="mt-1 block w-full rounded-lg border-gray-200 p-2 text-sm border focus:border-blue-500 outline-none"
+                            placeholder="我愛夏天...">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">關鍵詞 (Word)</label>
+                        <input type="text" id="word"
+                            class="mt-1 block w-full rounded-lg border-gray-200 p-2 text-sm border focus:border-blue-500 outline-none"
+                            placeholder="例如：l'été">
+                    </div>
+                    <button onclick="addToCache()"
+                        class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95">
+                        加入緩存清單 ➕
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-2xl text-white">
+                <details>
+                    <summary class="text-xs font-bold cursor-pointer opacity-70">🔑 GitHub API 配置 (點擊展開)</summary>
+                    <div class="mt-4 space-y-2">
+                        <input type="password" id="token" placeholder="GitHub Personal Access Token"
+                            class="w-full bg-gray-700 border-none rounded p-2 text-sm text-white">
+                        <input type="text" id="repo" placeholder="Owner/Repo (例如: yourname/anki-repo)"
+                            class="w-full bg-gray-700 border-none rounded p-2 text-sm text-white">
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">📋 待提交緩存 (<span id="count">0</span>/30)</h2>
+                    <button onclick="clearCache()" class="text-xs text-red-500 hover:underline">清空全部</button>
+                </div>
+
+                <div id="cacheList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                    <p class="text-center text-gray-400 py-10">目前沒有緩存數據</p>
+                </div>
+
+                <div class="mt-6 border-t pt-4">
+                    <button onclick="submitBatch()" id="submitBtn"
+                        class="w-full bg-green-500 text-white py-4 rounded-xl font-black hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all">
+                        確認無誤，批量提交至 GitHub 🚀
+                    </button>
+                    <p class="text-center text-[10px] text-gray-400 mt-2">提交後會自動觸發 GitHub Actions 生成 Anki 牌組</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cache = [];
+        document.getElementById('date').valueAsDate = new Date();
+
+        // 標準化處理
+        function normalize(text) {
+            return text.replace(/[’‘]/g, "'").replace(/｜/g, "|").trim();
+        }
+
+        // 加入緩存
+        function addToCache() {
+            const word = normalize(document.getElementById('word').value);
+            const sentence = normalize(document.getElementById('sentence').value);
+            const meaning = normalize(document.getElementById('meaning').value);
+            const lang = document.getElementById('lang').value;
+            const date = document.getElementById('date').value;
+
+            if (!word || !sentence || !meaning) {
+                alert("請填寫完整信息！");
+                return;
+            }
+
+            if (cache.length >= 30) {
+                alert("單次緩存上限為 30 組，請先提交！");
+                return;
+            }
+
+            cache.push({ lang, word, sentence, meaning, date });
+            updateUI();
+
+            // 清空輸入框
+            document.getElementById('word').value = '';
+            document.getElementById('sentence').value = '';
+            document.getElementById('meaning').value = '';
+            document.getElementById('word').focus();
+        }
+
+        // 更新介面
+        function updateUI() {
+            const list = document.getElementById('cacheList');
+            const count = document.getElementById('count');
+            count.innerText = cache.length;
+
+            if (cache.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-400 py-10">目前沒有緩存數據</p>';
+                document.getElementById('submitBtn').disabled = true;
+                return;
+            }
+
+            document.getElementById('submitBtn').disabled = false;
+            list.innerHTML = cache.map((item, index) => `
+                <div class="cached-card relative p-4 bg-blue-50 border border-blue-100 rounded-xl group transition-all">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[10px] font-bold bg-blue-200 text-blue-700 px-2 py-0.5 rounded">${item.lang} | ${item.date}</span>
+                        <button onclick="removeItem(${index})" class="delete-btn opacity-0 text-red-400 hover:text-red-600 transition-opacity">✕</button>
+                    </div>
+                    <div class="mt-2 grid grid-cols-1 gap-1">
+                        <input onchange="editItem(${index}, 'word', this.value)" class="bg-transparent font-bold text-gray-800 outline-none" value="${item.word}">
+                        <input onchange="editItem(${index}, 'sentence', this.value)" class="bg-transparent text-sm text-gray-600 outline-none" value="${item.sentence}">
+                        <input onchange="editItem(${index}, 'meaning', this.value)" class="bg-transparent text-sm text-gray-500 italic outline-none" value="${item.meaning}">
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function editItem(index, key, value) {
+            cache[index][key] = normalize(value);
+        }
+
+        function removeItem(index) {
+            cache.splice(index, 1);
+            updateUI();
+        }
+
+        function clearCache() {
+            if (confirm("確定清空嗎？")) { cache = []; updateUI(); }
+        }
+
+        // 核心：批量提交 GitHub API
+        async function submitBatch() {
+            const token = document.getElementById('token').value;
+            const repo = document.getElementById('repo').value;
+            // 新增這兩個輔助函數來處理 Unicode Base64
+            function utf8_to_b64(str) {
+                return window.btoa(unescape(encodeURIComponent(str)));
+            }
+
+            function b64_to_utf8(str) {
+                return decodeURIComponent(escape(window.atob(str)));
+            }
+
+            async function submitBatch() {
+                // ... 前面獲取 Token 和 Repo 的代碼不變 ...
+
+                try {
+                    for (const lang in groups) {
+                        const filePath = `Vocabulary/${lang}.md`;
+
+                        // 獲取原文件
+                        const res = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+                            headers: { Authorization: `token ${token}` }
+                        });
+
+                        let content = "";
+                        let sha = "";
+
+                        if (res.ok) {
+                            const fileData = await res.json();
+                            sha = fileData.sha;
+                            // 使用修正後的解碼函數
+                            content = b64_to_utf8(fileData.content.replace(/\s/g, ''));
+                        }
+
+                        // 構造內容邏輯 ... (保持不變)
+                        groups[lang].forEach(item => {
+                            const dateHeader = `### ${item.date}`;
+                            const newLine = `| ${item.word} | ${item.sentence} | ${item.meaning} |`;
+                            if (content.includes(dateHeader)) {
+                                content = content.replace(dateHeader, `${dateHeader}\n${newLine}`);
+                            } else {
+                                content += `\n\n${dateHeader}\n${newLine}`;
+                            }
+                        });
+
+                        // 寫回 GitHub：使用修正後的編碼函數
+                        await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+                            method: 'PUT',
+                            headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                message: `Add ${groups[lang].length} notes via Web Input (UTF-8 Fix)`,
+                                content: utf8_to_b64(content), // 關鍵修正
+                                sha: sha
+                            })
+                        });
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    alert("❌ 提交失敗，請檢查 Token 權限或網絡。");
+                } finally {
+                    btn.innerText = "確認無誤，批量提交至 GitHub 🚀";
+                    btn.disabled = false;
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
