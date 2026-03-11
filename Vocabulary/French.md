@@ -1,3 +1,7 @@
+### 2026-03-11
+| **déjà vu** | J'ai une sensation de déjà vu. | 我有一種似曾相識的感覺。 |
+|   | C'est la vie. | 這就是生活。 |
+
 ### 2026-03-06
 | écrire | Je vais l'écrire : mon nom est Louis. | 我可以寫 ：我的名字是路易 ｜
 | passionné | Je suis passionné par les langues. | 我對語言充滿熱情 |
