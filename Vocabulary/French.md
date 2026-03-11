@@ -13,3 +13,7 @@
 | mandarin | Ma langue maternelle, c'est le mandarin.| 我的母語是中文（普通話）|
 ### 2026-03-08
 | l'été | J’adore l’été car il fait beau. | 我愛夏天，因為天氣很好。 |
+| fait| Qu'est-ce qu'il fait ?| 他做了什麼？|
+| forcément | Il forcément fait quelque chose.| 他肯定做了什麼。|
+| expliquer | Il faut leur expliquer | 我們必須向他們解釋。|
+| sert | Oh,ça sert à rien.|Oh，那沒什麼用。|
