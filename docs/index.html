@@ -109,19 +109,20 @@
 
         // 加入緩存
         function addToCache() {
-            const word = normalize(document.getElementById('word').value);
+            const word = normalize(document.getElementById('word').value); // 容許為空
             const sentence = normalize(document.getElementById('sentence').value);
             const meaning = normalize(document.getElementById('meaning').value);
             const lang = document.getElementById('lang').value;
             const date = document.getElementById('date').value;
 
-            if (!word || !sentence || !meaning) {
-                alert("請填寫完整信息！");
+            // 只檢查句子和翻譯是否為空
+            if (!sentence || !meaning) {
+                alert("句子和翻譯是必填的！");
                 return;
             }
 
             if (cache.length >= 30) {
-                alert("單次緩存上限為 30 組，請先提交！");
+                alert("單次緩存上限為 30 組！");
                 return;
             }
 

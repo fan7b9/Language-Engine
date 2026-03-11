@@ -20,8 +20,15 @@ MY_MODEL = genanki.Model(
       'name': '智能學習模式',
       'qfmt': """
               <div style="font-size: 24px; font-weight: bold; color: #2C3E50;">{{SentenceMeaning}}</div>
-              <div style="font-size: 18px; color: #2E86C1; margin-top: 10px;">Key Word: {{Word}}</div>
-              <div style="margin-top: 20px;">{{Audio}}</div> <br><br>
+              
+              {{#Word}}
+              <div style="font-size: 16px; color: #2E86C1; margin-top: 10px; opacity: 0.8;">
+                Key: {{Word}}
+              </div>
+              {{/Word}}
+
+              <div style="margin-top: 20px;">{{Audio}}</div> 
+              <br><br>
               {{type:Example}}
               """,
       'afmt': """
