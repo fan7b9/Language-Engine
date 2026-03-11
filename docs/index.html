@@ -177,71 +177,102 @@
             if (confirm("確定清空嗎？")) { cache = []; updateUI(); }
         }
 
-        // 核心：批量提交 GitHub API
+        // 1. 先把輔助函數放在外面，方便調用
+        function utf8_to_b64(str) {
+            return window.btoa(unescape(encodeURIComponent(str)));
+        }
+
+        function b64_to_utf8(str) {
+            try {
+                return decodeURIComponent(escape(window.atob(str)));
+            } catch (e) {
+                return window.atob(str); // 如果解碼失敗，回退到普通 atob
+            }
+        }
+
+        // 2. 修正後的提交函數
         async function submitBatch() {
             const token = document.getElementById('token').value;
             const repo = document.getElementById('repo').value;
-            // 新增這兩個輔助函數來處理 Unicode Base64
-            function utf8_to_b64(str) {
-                return window.btoa(unescape(encodeURIComponent(str)));
+
+            if (!token || !repo) {
+                alert("請先配置 GitHub Token 和 Repo 路徑！");
+                return;
             }
 
-            function b64_to_utf8(str) {
-                return decodeURIComponent(escape(window.atob(str)));
-            }
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "正在提交...";
+            btn.disabled = true;
 
-            async function submitBatch() {
-                // ... 前面獲取 Token 和 Repo 的代碼不變 ...
+            try {
+                // 重要：定義分組邏輯
+                const groups = cache.reduce((acc, item) => {
+                    if (!acc[item.lang]) acc[item.lang] = [];
+                    acc[item.lang].push(item);
+                    return acc;
+                }, {});
 
-                try {
-                    for (const lang in groups) {
-                        const filePath = `Vocabulary/${lang}.md`;
+                for (const lang in groups) {
+                    const filePath = `Vocabulary/${lang}.md`;
 
-                        // 獲取原文件
-                        const res = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
-                            headers: { Authorization: `token ${token}` }
-                        });
+                    // A. 獲取原文件
+                    const res = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+                        headers: { Authorization: `token ${token}` }
+                    });
 
-                        let content = "";
-                        let sha = "";
+                    let content = "";
+                    let sha = "";
 
-                        if (res.ok) {
-                            const fileData = await res.json();
-                            sha = fileData.sha;
-                            // 使用修正後的解碼函數
-                            content = b64_to_utf8(fileData.content.replace(/\s/g, ''));
-                        }
-
-                        // 構造內容邏輯 ... (保持不變)
-                        groups[lang].forEach(item => {
-                            const dateHeader = `### ${item.date}`;
-                            const newLine = `| ${item.word} | ${item.sentence} | ${item.meaning} |`;
-                            if (content.includes(dateHeader)) {
-                                content = content.replace(dateHeader, `${dateHeader}\n${newLine}`);
-                            } else {
-                                content += `\n\n${dateHeader}\n${newLine}`;
-                            }
-                        });
-
-                        // 寫回 GitHub：使用修正後的編碼函數
-                        await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
-                            method: 'PUT',
-                            headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                message: `Add ${groups[lang].length} notes via Web Input (UTF-8 Fix)`,
-                                content: utf8_to_b64(content), // 關鍵修正
-                                sha: sha
-                            })
-                        });
+                    if (res.ok) {
+                        const fileData = await res.json();
+                        sha = fileData.sha;
+                        content = b64_to_utf8(fileData.content.replace(/\s/g, ''));
                     }
 
-                } catch (err) {
-                    console.error(err);
-                    alert("❌ 提交失敗，請檢查 Token 權限或網絡。");
-                } finally {
-                    btn.innerText = "確認無誤，批量提交至 GitHub 🚀";
-                    btn.disabled = false;
+                    // B. 構造新內容 (將新單詞插入到對應日期下)
+                    groups[lang].forEach(item => {
+                        const dateHeader = `### ${item.date}`;
+                        // 處理關鍵詞為空的情況：如果為空則只留空格
+                        const wordDisplay = item.word ? `**${item.word}**` : " ";
+                        const newLine = `| ${wordDisplay} | ${item.sentence} | ${item.meaning} |`;
+
+                        if (content.includes(dateHeader)) {
+                            // 如果日期已存在，插在日期標題下方
+                            content = content.replace(dateHeader, `${dateHeader}\n${newLine}`);
+                        } else {
+                            // 如果是新日期，插在文件最上方
+                            content = `${dateHeader}\n${newLine}\n\n${content}`;
+                        }
+                    });
+
+                    // C. 寫回 GitHub
+                    const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+                        method: 'PUT',
+                        headers: {
+                            Authorization: `token ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: `Add ${groups[lang].length} notes via Web Input (UTF-8 Fix)`,
+                            content: utf8_to_b64(content),
+                            sha: sha
+                        })
+                    });
+
+                    if (!putRes.ok) throw new Error(`GitHub API 回傳錯誤: ${putRes.status}`);
                 }
+
+                alert("✅ 批量提交成功！GitHub Actions 正在生成牌組。");
+                cache = [];
+                updateUI();
+
+            } catch (err) {
+                console.error(err);
+                alert("❌ 提交失敗：" + err.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         }
     </script>
