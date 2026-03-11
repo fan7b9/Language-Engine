@@ -1,16 +1,16 @@
 ### 2026-03-06
-| Ã©crire | Je vais l'Ã©crire : mon nom est Louis. | æå¯ä»¥å¯« ï¼æçåå­æ¯è·¯æ ï½
-| passionnÃ© | Je suis passionnÃ© par les langues. | æå°èªè¨åæ»¿ç±æ |
+| écrire | Je vais l'écrire : mon nom est Louis. | 我可以寫 ：我的名字是路易 ｜
+| passionné | Je suis passionné par les langues. | 我對語言充滿熱情 |
 ### 2026-03-07
-| Ã©couter |J'adore Ã©couter des choses en allemand | æåæ­¡è½å¾·èª |
-| comprendre |J'essaie de comprendre... | æåè©¦çè§£ |
-| apprends |Jâapprends lâallemand. |æå­¸ç¿å¾·èª |
-| lire |Jâaime aussi lire dans cette langue.| æä¹åæ­¡ç¨ééèªè¨é±è® |
-| autant |Jâaime tout autant lâespagnol. | æä¹åæ­¡è¥¿ç­çèª |
-| les paroles |J'Ã©coute de la musique, j'essaie de comprendre les paroles, de lire ou mÃªme de parler avec quelqu'un. | æè½é³æ¨ï¼æè©¦èçè§£æ­è©ï¼é±è®çè³åæäººäº¤è«ã|
-| Ã©normÃ©ment | Bref, j'aime Ã©normÃ©ment les langues !| ç¸½ä¹ï¼æççå¾åæ­¡èªè¨ |
-| maternelle | Ma langue maternelle, c'est le chinois.| æçæ¯èªæ¯ä¸­æ |
-| mandarin | Ma langue maternelle, c'est le mandarin.| æçæ¯èªæ¯ä¸­æï¼æ®éè©±ï¼|
+| écouter |J'adore écouter des choses en allemand | 我喜歡聽德語 |
+| comprendre |J'essaie de comprendre... | 我嘗試理解 |
+| apprends |J’apprends l’allemand. |我學習德語 |
+| lire |J’aime aussi lire dans cette langue.| 我也喜歡用這門語言閱讀 |
+| autant |J’aime tout autant l’espagnol. | 我也喜歡西班牙語 |
+| les paroles |J'écoute de la musique, j'essaie de comprendre les paroles, de lire ou même de parler avec quelqu'un. | 我聽音樂，我試著理解歌詞，閱讀甚至和某人交談。|
+| énormément | Bref, j'aime énormément les langues !| 總之，我真的很喜歡語言 |
+| maternelle | Ma langue maternelle, c'est le chinois.| 我的母語是中文 |
+| mandarin | Ma langue maternelle, c'est le mandarin.| 我的母語是中文（普通話）|
 ### 2026-03-08
 | l'été | J’adore l’été car il fait beau. | 我愛夏天，因為天氣很好。 |
 | fait| Qu'est-ce qu'il fait ?| 他做了什麼？|
